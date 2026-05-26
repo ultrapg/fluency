@@ -99,36 +99,66 @@ impl Default for AudioSettings {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PromptStyle {
+    #[serde(rename = "clean")]
+    Clean,
+    #[serde(rename = "bullets")]
+    BulletPoints,
+    #[serde(rename = "smart")]
+    Smart,
+    #[serde(rename = "minimal")]
+    Minimal,
+}
+
+impl Default for PromptStyle {
+    fn default() -> Self { PromptStyle::Smart }
+}
+
+impl PromptStyle {
+    pub fn all() -> &'static [PromptStyle] {
+        &[PromptStyle::Clean, PromptStyle::BulletPoints, PromptStyle::Smart, PromptStyle::Minimal]
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            PromptStyle::Clean => "Clean paragraphs",
+            PromptStyle::BulletPoints => "Bullet points",
+            PromptStyle::Smart => "Smart formatting",
+            PromptStyle::Minimal => "Minimal (caps + punctuation)",
+        }
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            PromptStyle::Clean => "Full paragraphs with filler removal. Adds capital letters, periods, paragraph breaks, and removes hesitations.",
+            PromptStyle::BulletPoints => "Converts the text into a bullet-point list with one item per line (each starting with '- '). Good for notes.",
+            PromptStyle::Smart => "Analyzes the text and only fixes what needs improvement: punctuation, capitalization, filler words, and topic breaks. Keeps the original wording.",
+            PromptStyle::Minimal => "Only adds ending punctuation and fixes capitalization of the first letter. Does not change or remove any words.",
+        }
+    }
+
+    pub fn tooltip(&self) -> &'static str {
+        match self {
+            PromptStyle::Clean => "The LLM reformats your transcription into clean paragraphs with proper punctuation, capitalization, line breaks between topics, and removes filler words like 'um' and 'uh'. Best for formal writing or sharing.",
+            PromptStyle::BulletPoints => "The LLM rewrites the text as a bullet-point list so each idea is on its own line. Great for brainstorming notes or to-do lists.",
+            PromptStyle::Smart => "The LLM checks each sentence and only adds what's missing: capital letters, periods, commas, and paragraph breaks. Filler words are removed. Sentences are NOT rewritten — every word stays. This is the default and works best for general use.",
+            PromptStyle::Minimal => "The LLM only adds a period at the end of sentences and capitalizes the first letter. No words are added, removed, or changed. Best if you want pure raw transcription with basic readability.",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormatSettings {
-    pub auto_capitalize: bool,
-    pub auto_punctuate: bool,
-    pub remove_fillers: bool,
-    pub fix_corrections: bool,
-    pub lm_correction: bool,
-    pub fillers: Vec<String>,
-    pub correction_markers: Vec<String>,
+    #[serde(default = "default_true")]
+    pub bigram: bool,
 }
+
+const fn default_true() -> bool { true }
 
 impl Default for FormatSettings {
     fn default() -> Self {
-        Self {
-            auto_capitalize: true,
-            auto_punctuate: true,
-            remove_fillers: false,
-            fix_corrections: false,
-            lm_correction: true,
-            fillers: vec![
-                "um".into(), "uh".into(), "er".into(), "ah".into(),
-                "like".into(), "you know".into(), "i mean".into(),
-                "sort of".into(), "kind of".into(), "you know what i mean".into(),
-            ],
-            correction_markers: vec![
-                "or no".into(), "or uh".into(), "or like".into(),
-                "i mean".into(), "i meant".into(), "no wait".into(),
-                "or rather".into(),
-            ],
-        }
+        Self { bigram: true }
     }
 }
 
@@ -215,6 +245,123 @@ impl Default for ProcessingSettings {
     }
 }
 
+#[allow(non_camel_case_types)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LlmModelId {
+    #[serde(rename = "gemma3_270m")]
+    Gemma3_270M,
+    #[serde(rename = "smollm2_360m")]
+    SmolLM2_360M,
+    #[serde(rename = "qwen2_5_0_5b")]
+    Qwen2_5_0_5B,
+    #[serde(rename = "tinyllama_1_1b")]
+    TinyLlama_1_1B,
+    #[serde(rename = "smollm2_1_7b")]
+    SmolLM2_1_7B,
+}
+
+impl LlmModelId {
+    pub fn all() -> &'static [LlmModelId] {
+        &[
+            // Gemma3_270M removed — crashes with buffer overflow on bundled llama.cpp
+            LlmModelId::SmolLM2_360M,
+            LlmModelId::Qwen2_5_0_5B,
+            LlmModelId::TinyLlama_1_1B,
+            LlmModelId::SmolLM2_1_7B,
+        ]
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            LlmModelId::Gemma3_270M => "Gemma 3 270M",
+            LlmModelId::SmolLM2_360M => "SmolLM2 360M",
+            LlmModelId::Qwen2_5_0_5B => "Qwen2.5 0.5B",
+            LlmModelId::TinyLlama_1_1B => "TinyLlama 1.1B",
+            LlmModelId::SmolLM2_1_7B => "SmolLM2 1.7B",
+        }
+    }
+
+    pub fn hf_repo(&self) -> &'static str {
+        match self {
+            LlmModelId::Gemma3_270M => "lmstudio-community/gemma-3-270m-it-GGUF",
+            LlmModelId::SmolLM2_360M => "bartowski/SmolLM2-360M-Instruct-GGUF",
+            LlmModelId::Qwen2_5_0_5B => "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+            LlmModelId::TinyLlama_1_1B => "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
+            LlmModelId::SmolLM2_1_7B => "bartowski/SmolLM2-1.7B-Instruct-GGUF",
+        }
+    }
+
+    pub fn gguf_filename(&self) -> &'static str {
+        match self {
+            LlmModelId::Gemma3_270M => "gemma-3-270m-it-Q4_K_M.gguf",
+            // Q4_0 instead of Q4_K_M — K-quants cause buffer overflow on bundled llama.cpp (ARM)
+            LlmModelId::SmolLM2_360M => "SmolLM2-360M-Instruct-Q4_0.gguf",
+            LlmModelId::Qwen2_5_0_5B => "qwen2.5-0.5b-instruct-q4_0.gguf",
+            LlmModelId::TinyLlama_1_1B => "tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+            LlmModelId::SmolLM2_1_7B => "SmolLM2-1.7B-Instruct-Q4_0.gguf",
+        }
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            LlmModelId::Gemma3_270M => "Fastest, ~150 MB (removed — crashes on bundled llama.cpp)",
+            LlmModelId::SmolLM2_360M => "Fast, ~200 MB GGUF (Q4)",
+            LlmModelId::Qwen2_5_0_5B => "Balanced, ~300 MB GGUF (Q4)",
+            LlmModelId::TinyLlama_1_1B => "Good quality, ~650 MB GGUF (Q4)",
+            LlmModelId::SmolLM2_1_7B => "Best quality, ~950 MB GGUF (Q4)",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LlmSettings {
+    pub enabled: bool,
+    pub model: LlmModelId,
+    pub max_tokens: u32,
+    pub temperature: f32,
+    #[serde(default)]
+    pub prompt_style: PromptStyle,
+    #[serde(default)]
+    pub custom_prompt: String,
+    #[serde(default = "default_chunk_size")]
+    pub chunk_size: u32,
+}
+
+const fn default_chunk_size() -> u32 { 500 }
+
+impl Default for LlmSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            model: LlmModelId::SmolLM2_360M,
+            max_tokens: 512,
+            temperature: 0.0,
+            prompt_style: PromptStyle::Smart,
+            custom_prompt: String::new(),
+            chunk_size: 500,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorrectionSettings {
+    pub enabled: bool,
+    pub entropy_threshold: f32,
+    pub logprob_threshold: f32,
+    pub max_reruns: u32,
+}
+
+impl Default for CorrectionSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            entropy_threshold: 2.0,
+            logprob_threshold: -1.5,
+            max_reruns: 1,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     pub audio: AudioSettings,
@@ -225,6 +372,8 @@ pub struct Settings {
     pub model_size: ModelSize,
     pub input_device_name: Option<String>,
     pub auto_save: bool,
+    pub llm: LlmSettings,
+    pub correction: CorrectionSettings,
 }
 
 impl Default for Settings {
@@ -238,6 +387,8 @@ impl Default for Settings {
             model_size: ModelSize::Base,
             input_device_name: None,
             auto_save: true,
+            llm: LlmSettings::default(),
+            correction: CorrectionSettings::default(),
         }
     }
 }
@@ -285,9 +436,8 @@ impl Settings {
         if !self.model_path.is_empty() {
             return PathBuf::from(&self.model_path);
         }
-        let data_dir = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
         let model_file = format!("ggml-{}.bin", self.model_size.name());
-        data_dir.join("fluency").join(model_file)
+        crate::paths::whisper_model_path(&model_file)
     }
 }
 
