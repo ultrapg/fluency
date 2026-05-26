@@ -3,7 +3,6 @@
 **Local speech-to-text dictation — fully offline, no cloud, one binary**
 
 ![Platform: Linux & Windows](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-blue)
-![Rust](https://img.shields.io/badge/Rust-1.80%2B-orange)
 
 Fluency is a standalone desktop application that turns microphone audio into text using OpenAI's Whisper model. Everything runs locally — no API keys, no internet required, no data leaves your machine.
 
