@@ -36,10 +36,6 @@ fluency transcribe recording.wav
 
 On first run, the GUI prompts you to download a Whisper model. The `base` model (150 MB) is recommended for most users.
 
-## Screenshots
-
-<sup>(add screenshots here — the GUI has a main text area, toolbar, bottom controls, and a settings window with 4 tabs: Audio, Model, Processing, LLM & Correction)</sup>
-
 ## GUI
 
 Run without arguments to open the desktop window:
