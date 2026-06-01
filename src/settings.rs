@@ -148,17 +148,56 @@ impl PromptStyle {
     }
 }
 
+fn default_fillers() -> Vec<String> {
+    vec![
+        "um".into(),
+        "uh".into(),
+        "like".into(),
+        "you know".into(),
+        "hmm".into(),
+        "er".into(),
+        "ah".into(),
+    ]
+}
+
+fn default_correction_markers() -> Vec<String> {
+    vec!["or".into(), "i mean".into(), "no".into(), "actually".into()]
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormatSettings {
     #[serde(default = "default_true")]
     pub bigram: bool,
+    #[serde(default = "default_true")]
+    pub auto_capitalize: bool,
+    #[serde(default = "default_true")]
+    pub auto_punctuate: bool,
+    #[serde(default)]
+    pub remove_fillers: bool,
+    #[serde(default)]
+    pub fix_corrections: bool,
+    #[serde(default = "default_true")]
+    pub lm_correction: bool,
+    #[serde(default = "default_fillers")]
+    pub fillers: Vec<String>,
+    #[serde(default = "default_correction_markers")]
+    pub correction_markers: Vec<String>,
 }
 
 const fn default_true() -> bool { true }
 
 impl Default for FormatSettings {
     fn default() -> Self {
-        Self { bigram: true }
+        Self {
+            bigram: true,
+            auto_capitalize: true,
+            auto_punctuate: true,
+            remove_fillers: false,
+            fix_corrections: false,
+            lm_correction: true,
+            fillers: default_fillers(),
+            correction_markers: default_correction_markers(),
+        }
     }
 }
 

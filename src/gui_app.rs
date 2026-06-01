@@ -598,8 +598,8 @@ impl FluencyGui {
             ).on_hover_text("Edit the list of words to strip. One per line.");
             if r.changed() {
                 f.fillers = fillers_text.lines()
-                    .map(|l| l.trim().to_string())
-                    .filter(|l| !l.is_empty())
+                    .map(|l: &str| l.trim().to_string())
+                    .filter(|l: &String| !l.is_empty())
                     .collect();
             }
             ui.add_space(4.0);
@@ -618,8 +618,8 @@ impl FluencyGui {
             ).on_hover_text("Edit the list of self-correction markers. Text before marker is removed.");
             if r.changed() {
                 f.correction_markers = markers_text.lines()
-                    .map(|l| l.trim().to_string())
-                    .filter(|l| !l.is_empty())
+                    .map(|l: &str| l.trim().to_string())
+                    .filter(|l: &String| !l.is_empty())
                     .collect();
             }
             ui.add_space(4.0);
