@@ -69,9 +69,8 @@ fluency transcribe <file> [options]
 | `-m, --model <path>` | Whisper model path (defaults to auto-downloaded) |
 | `-l, --language <code>` | Language code or `auto` (default: `auto`) |
 | `-c, --clipboard` | Copy result to clipboard (dictate only) |
-| `--bigram` | Enable bigram correction |
-| `--llm-format` | Enable LLM formatting |
-| `--correct` | Enable auto-correction on low-confidence segments |
+| `--format` | Enable text formatting (punctuation, caps) |
+| `--lm` | Enable bigram LM correction |
 
 ## LLM Formatting
 
@@ -129,7 +128,7 @@ If building for a different ARM CPU, adjust or remove that file.
 
 Settings are persisted to `$XDG_CONFIG_HOME/fluency/settings.json` (Linux) or the equivalent on Windows. All settings can be adjusted through the GUI and are saved automatically when the settings window is closed.
 
-Model files are stored alongside the binary in `models/whisper/` and `models/llm/`.
+Whisper model files are stored in `$XDG_DATA_HOME/fluency/` (e.g. `ggml-tiny.bin`). LLM models are downloaded on first use.
 
 ## How It Works
 
