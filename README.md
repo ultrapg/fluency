@@ -100,7 +100,7 @@ This guarantees the LLM **never rewrites your text into a story** — it only fo
 | TinyLlama 1.1B | ~650 MB | High quality |
 | SmolLM2 1.7B | ~950 MB | Best quality |
 
-Inference uses [llama.cpp](https://github.com/ggerganov/llama.cpp) via the `llama-cpp-2` Rust crate (CPU-only, GGUF format).
+Inference uses [llama.cpp](https://github.com/ggerganov/llama.cpp) via the `llama-cpp-2` Rust crate with Vulkan GPU/CPU acceleration (GGUF format).
 
 ## Building from Source
 
@@ -112,11 +112,17 @@ Inference uses [llama.cpp](https://github.com/ggerganov/llama.cpp) via the `llam
 
 ### Build
 
+To compile Fluency with Vulkan support and resolve link conflicts between Whisper/LLaMA GGML libraries, set the appropriate linker flags:
+
 ```sh
+export RUSTFLAGS="-C link-arg=-Wl,--allow-multiple-definition -C link-arg=-Wl,-rpath,\$ORIGIN"
+export BINDGEN_EXTRA_CLANG_ARGS="-I/usr/lib/gcc/x86_64-linux-gnu/15/include"
+export LIBRARY_PATH="/path/to/libvulkan:$LIBRARY_PATH"
+
 cargo build --release
 ```
 
-The `fluency` binary is at `target/release/fluency`.
+The compiled portable `fluency` binary is located at `target/release/fluency`.
 
 ### ARM / Raspberry Pi
 
@@ -124,11 +130,13 @@ On ARM Linux (e.g. Raspberry Pi 5), `.cargo/config.toml` automatically passes
 `-C target-cpu=cortex-a76` to work around a build issue with `gemm-f16`.
 If building for a different ARM CPU, adjust or remove that file.
 
-## Configuration
+## Configuration & Portability
 
-Settings are persisted to `$XDG_CONFIG_HOME/fluency/settings.json` (Linux) or the equivalent on Windows. All settings can be adjusted through the GUI and are saved automatically when the settings window is closed.
+Fluency is designed to be fully self-contained and portable:
 
-Whisper model files are stored in `$XDG_DATA_HOME/fluency/` (e.g. `ggml-tiny.bin`). LLM models are downloaded on first use.
+- **Settings**: Stored in `settings.json` next to the `fluency` executable.
+- **Models**: Whisper and LLM models are stored in a `models/` directory next to the executable (e.g. `models/ggml-base.bin`). Models are auto-downloaded on first use.
+- **Shared Libraries**: The binary is linked using `rpath` pointing to `$ORIGIN`, meaning it will load any accompanying dynamic libraries from the same folder as the binary.
 
 ## How It Works
 
