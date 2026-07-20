@@ -24,8 +24,7 @@ fn model_url(size: ModelSize) -> String {
 }
 
 pub fn path_for_size(size: ModelSize) -> PathBuf {
-    let data_dir = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
-    data_dir.join("fluency").join(model_filename(size))
+    crate::paths::whisper_model_path(model_filename(size))
 }
 
 pub fn ensure_downloaded_by_size(size: ModelSize) -> anyhow::Result<PathBuf> {
@@ -81,4 +80,40 @@ pub fn ensure_downloaded(path: &Path) -> anyhow::Result<()> {
 
     ensure_downloaded_by_size(size)?;
     Ok(())
+}
+
+pub fn ensure_llm_downloaded(model: crate::settings::LlmModelId) -> anyhow::Result<PathBuf> {
+    let filename = model.gguf_filename();
+    let path = crate::paths::llm_model_path(filename);
+    if path.exists() {
+        return Ok(path);
+    }
+
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    let url = format!(
+        "https://huggingface.co/{}/resolve/main/{}",
+        model.hf_repo(),
+        filename
+    );
+    eprint!("Downloading {} LLM model ({})... ", model.name(), filename);
+    std::io::stderr().flush()?;
+
+    let tmp_path = path.with_extension("tmp");
+    let response = ureq::get(&url)
+        .call()
+        .map_err(|e| anyhow::anyhow!("Failed to download LLM model {}: {e}", model.name()))?;
+
+    let mut file = std::fs::File::create(&tmp_path)?;
+    let mut reader = response.into_reader();
+    let n = std::io::copy(&mut reader, &mut file)
+        .map_err(|e| anyhow::anyhow!("Failed to write LLM model file: {e}"))?;
+
+    std::fs::rename(&tmp_path, &path)?;
+    let mb = n as f64 / 1_048_576.0;
+    eprintln!("done ({mb:.1} MB)");
+
+    Ok(path)
 }

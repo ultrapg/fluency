@@ -86,7 +86,8 @@ fn run_cli(cmd: Commands) -> anyhow::Result<()> {
             let text = if do_format || do_lm {
                 let f = format::Formatter::new()
                     .with_settings(&settings.format)
-                    .with_lm_correction(do_lm);
+                    .with_lm_correction(do_lm)
+                    .with_llm(&settings.llm);
                 f.format(&text)
             } else {
                 text
@@ -106,7 +107,8 @@ fn run_cli(cmd: Commands) -> anyhow::Result<()> {
             let text = if do_format || do_lm {
                 let f = format::Formatter::new()
                     .with_settings(&settings.format)
-                    .with_lm_correction(do_lm);
+                    .with_lm_correction(do_lm)
+                    .with_llm(&settings.llm);
                 f.format(&text)
             } else {
                 text

@@ -176,6 +176,7 @@ impl FluencyGui {
         let processing = self.settings.processing.clone();
         let shared = self.shared.clone();
         let format_settings = self.settings.format.clone();
+        let llm_settings = self.settings.llm.clone();
         let do_auto_save = self.settings.auto_save;
 
         thread::spawn(move || {
@@ -202,7 +203,8 @@ impl FluencyGui {
             let text = match result {
                 Ok(t) => {
                     let f = format::Formatter::new()
-                        .with_settings(&format_settings);
+                        .with_settings(&format_settings)
+                        .with_llm(&llm_settings);
                     f.format(&t)
                 }
                 Err(e) => {

@@ -341,6 +341,13 @@ impl LlmModelId {
         }
     }
 
+    pub fn template(&self) -> &'static str {
+        match self {
+            LlmModelId::Qwen2_5_0_5B | LlmModelId::SmolLM2_360M | LlmModelId::SmolLM2_1_7B => "qwen",
+            _ => "llama",
+        }
+    }
+
     pub fn description(&self) -> &'static str {
         match self {
             LlmModelId::Gemma3_270M => "Fastest, ~150 MB (removed — crashes on bundled llama.cpp)",
@@ -481,6 +488,7 @@ impl Settings {
 }
 
 fn settings_path() -> Option<PathBuf> {
-    let base = dirs::config_dir().or_else(|| dirs::data_dir())?;
-    Some(base.join("fluency").join("settings.json"))
+    let mut exe_path = std::env::current_exe().ok()?;
+    exe_path.pop();
+    Some(exe_path.join("settings.json"))
 }
